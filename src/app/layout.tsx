@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google'; // Atau font lain yang Anda gunakan
+import { Inter } from 'next/font/google';
 import './globals.css';
-import Header from '@/components/Header'; // Import komponen Header
+import Header from '@/components/Header';
+import { Toaster } from 'sonner';
 
-const inter = Inter({ subsets: ['latin'] }); // Jika Anda menggunakan font Inter
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'KelolaHub - Manajemen Tugas & Pekerjaan',
@@ -18,8 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Header /> {/* Tambahkan komponen Header di sini */}
-        <main>{children}</main> {/* Konten halaman akan dirender di sini */}
+        <Header />
+        <main>{children}</main>
+        <Toaster />
       </body>
     </html>
   );
