@@ -65,10 +65,12 @@ export async function PUT(request: NextRequest) {
       },
     });
     return NextResponse.json(updatedTask);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating task:', error);
-    if (error.code === 'P2025') { // Prisma error code for record not found
-      return NextResponse.json({ message: 'Task not found' }, { status: 404 });
+    if (typeof error === 'object' && error !== null && 'code' in error) {
+      if (error.code === 'P2025') { // Prisma error code for record not found
+        return NextResponse.json({ message: 'Task not found' }, { status: 404 });
+      }
     }
     return NextResponse.json({ message: 'Failed to update task' }, { status: 500 });
   }
@@ -87,10 +89,12 @@ export async function DELETE(request: NextRequest) {
       where: { id },
     });
     return NextResponse.json({ message: 'Task deleted successfully' }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting task:', error);
-    if (error.code === 'P2025') { // Prisma error code for record not found
-      return NextResponse.json({ message: 'Task not found' }, { status: 404 });
+    if (typeof error === 'object' && error !== null && 'code' in error) {
+      if (error.code === 'P2025') { // Prisma error code for record not found
+        return NextResponse.json({ message: 'Task not found' }, { status: 404 });
+      }
     }
     return NextResponse.json({ message: 'Failed to delete task' }, { status: 500 });
   }
