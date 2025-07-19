@@ -49,8 +49,8 @@ export default function TasksPage() {
       }
       const data: Task[] = await res.json();
       setTasks(data);
-    } catch (err: any) {
-      console.error('Failed to fetch tasks:', err);
+    } catch (error: unknown) {
+      console.error('Failed to fetch tasks:', error);
       setError('Gagal memuat tugas. Silakan coba lagi.');
       toast.error('Gagal memuat tugas');
     } finally {
@@ -69,7 +69,7 @@ export default function TasksPage() {
   };
 
   const handleSelectChange = (id: keyof Omit<Task, 'id' | 'createdAt' | 'updatedAt'>, value: string) => {
-    setFormData(prev => ({ ...prev, [id]: value as any }));
+    setFormData(prev => ({ ...prev, [id]: value as string }));
   };
 
   // --- Tambahkan Data Baru (CREATE) ---
@@ -96,10 +96,12 @@ export default function TasksPage() {
         title: '', description: '', dueDate: '', status: 'To Do', priority: 'Low', assignee: ''
       }); // Reset form
       toast.success('Tugas baru berhasil ditambahkan!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to add task:', err);
-      setError(`Gagal menambahkan tugas: ${err.message}`);
-      toast.error(`Gagal menambahkan tugas: ${err.message}`);
+      if (err instanceof Error){
+        setError(`Gagal menambahkan tugas: ${err.message}`);
+        toast.error(`Gagal menambahkan tugas: ${err.message}`);
+      }
     }
   };
 
@@ -146,10 +148,12 @@ export default function TasksPage() {
         title: '', description: '', dueDate: '', status: 'To Do', priority: 'Low', assignee: ''
       }); // Reset form
       toast.success('Tugas berhasil diperbarui!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to update task:', err);
-      setError(`Gagal memperbarui tugas: ${err.message}`);
-      toast.error(`Gagal memperbarui tugas: ${err.message}`);
+      if (err instanceof Error) {
+        setError(`Gagal memperbarui tugas: ${err.message}`);
+        toast.error(`Gagal memperbarui tugas: ${err.message}`);
+      }
     }
   };
 
@@ -173,10 +177,12 @@ export default function TasksPage() {
 
       setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
       toast.success('Tugas berhasil dihapus!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to delete task:', err);
-      setError(`Gagal menghapus tugas: ${err.message}`);
-      toast.error(`Gagal menghapus tugas: ${err.message}`);
+      if (err instanceof Error) {
+        setError(`Gagal menghapus tugas: ${err.message}`);
+        toast.error(`Gagal menghapus tugas: ${err.message}`);
+      }
     }
   };
 
