@@ -1,120 +1,97 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { v4 as uuidv4 } from 'uuid'; // Untuk menghasilkan ID unik
+import { PrismaClient } from '@prisma/client'; // Import PrismaClient
 
-// --- Data Statis (Simulasi Database) ---
-let tasks: Task[] = [
-  {
-    id: '1',
-    title: 'Desain UI Halaman Beranda',
-    description: 'Buat wireframe dan mockup untuk halaman beranda KelolaHub dengan tema pastel.',
-    dueDate: '2025-07-15',
-    status: 'In Progress',
-    priority: 'High',
-    assignee: 'Alice',
-    createdAt: '2025-07-01T10:00:00Z',
-    updatedAt: '2025-07-10T14:30:00Z',
-  },
-  {
-    id: '2',
-    title: 'Implementasi Autentikasi Pengguna',
-    description: 'Integrasikan sistem autentikasi (login/register) menggunakan NextAuth.js.',
-    dueDate: '2025-07-20',
-    status: 'To Do',
-    priority: 'High',
-    assignee: 'Bob',
-    createdAt: '2025-07-05T09:00:00Z',
-    updatedAt: '2025-07-05T09:00:00Z',
-  },
-  {
-    id: '3',
-    title: 'Refactor Komponen Tombol',
-    description: 'Perbarui komponen Button agar lebih modular dan sesuai dengan standar Shadcn UI.',
-    dueDate: '2025-07-12',
-    status: 'Done',
-    priority: 'Medium',
-    assignee: 'Charlie',
-    createdAt: '2025-07-03T11:00:00Z',
-    updatedAt: '2025-07-12T16:00:00Z',
-  },
-];
-
-// Pastikan tipe Task didefinisikan atau diimpor di tempat lain
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  dueDate: string;
-  status: 'To Do' | 'In Progress' | 'Done';
-  priority: 'Low' | 'Medium' | 'High';
-  assignee: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
+const prisma = new PrismaClient(); // Inisialisasi Prisma Client
 
 // --- Mengambil Semua Data (GET) ---
 export async function GET() {
-  return NextResponse.json(tasks);
+  try {
+    const tasks = await prisma.task.findMany({
+      orderBy: { createdAt: 'desc' }, // Urutkan berdasarkan waktu pembuatan terbaru
+    });
+    return NextResponse.json(tasks);
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    return NextResponse.json({ message: 'Failed to fetch tasks' }, { status: 500 });
+  }
 }
 
 // --- Menambahkan Data Baru (POST) ---
 export async function POST(request: NextRequest) {
-  const newTask: Omit<Task, 'id' | 'createdAt' | 'updatedAt'> = await request.json();
+  try {
+    const { title, description, dueDate, status, priority, assignee } = await request.json();
 
-  if (!newTask.title || !newTask.description || !newTask.dueDate || !newTask.status || !newTask.priority || !newTask.assignee) {
-    return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
+    // Validasi dasar
+    if (!title || !dueDate || !status || !priority) {
+      return NextResponse.json({ message: 'Missing required fields: title, dueDate, status, priority' }, { status: 400 });
+    }
+
+    const newTask = await prisma.task.create({
+      data: {
+        title,
+        description,
+        dueDate: new Date(dueDate),
+        status,
+        priority,
+        assignee,
+      },
+    });
+    return NextResponse.json(newTask, { status: 201 });
+  } catch (error) {
+    console.error('Error creating task:', error);
+    return NextResponse.json({ message: 'Failed to create task' }, { status: 500 });
   }
-
-  const taskWithId: Task = {
-    ...newTask,
-    id: uuidv4(), // Generate ID unik
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  tasks.push(taskWithId);
-  return NextResponse.json(taskWithId, { status: 201 }); // 201 Created
 }
 
 // --- Mengupdate Data (PUT) ---
 export async function PUT(request: NextRequest) {
-  const updatedTaskData: Partial<Task> & { id: string } = await request.json(); // Membutuhkan ID di body
+  try {
+    const { id, title, description, dueDate, status, priority, assignee } = await request.json();
 
-  if (!updatedTaskData.id) {
-    return NextResponse.json({ message: 'Task ID is required for update' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ message: 'Task ID is required for update' }, { status: 400 });
+    }
+
+    const updatedTask = await prisma.task.update({
+      where: { id },
+      data: {
+        title,
+        description,
+        dueDate: dueDate ? new Date(dueDate) : undefined, // Update jika ada
+        status,
+        priority,
+        assignee,
+        updatedAt: new Date(),
+      },
+    });
+    return NextResponse.json(updatedTask);
+  } catch (error: any) {
+    console.error('Error updating task:', error);
+    if (error.code === 'P2025') { // Prisma error code for record not found
+      return NextResponse.json({ message: 'Task not found' }, { status: 404 });
+    }
+    return NextResponse.json({ message: 'Failed to update task' }, { status: 500 });
   }
-
-  const taskIndex = tasks.findIndex(task => task.id === updatedTaskData.id);
-
-  if (taskIndex === -1) {
-    return NextResponse.json({ message: 'Task not found' }, { status: 404 });
-  }
-
-  const existingTask = tasks[taskIndex];
-  const updatedTask = {
-    ...existingTask,
-    ...updatedTaskData,
-    updatedAt: new Date().toISOString(), // Update timestamp
-  };
-
-  tasks[taskIndex] = updatedTask;
-  return NextResponse.json(updatedTask);
 }
 
 // --- Menghapus Data (DELETE) ---
 export async function DELETE(request: NextRequest) {
-  const { id }: { id: string } = await request.json(); // Membutuhkan ID di body
+  try {
+    const { id } = await request.json();
 
-  if (!id) {
-    return NextResponse.json({ message: 'Task ID is required for deletion' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ message: 'Task ID is required for deletion' }, { status: 400 });
+    }
+
+    await prisma.task.delete({
+      where: { id },
+    });
+    return NextResponse.json({ message: 'Task deleted successfully' }, { status: 200 });
+  } catch (error: any) {
+    console.error('Error deleting task:', error);
+    if (error.code === 'P2025') { // Prisma error code for record not found
+      return NextResponse.json({ message: 'Task not found' }, { status: 404 });
+    }
+    return NextResponse.json({ message: 'Failed to delete task' }, { status: 500 });
   }
-
-  const initialLength = tasks.length;
-  tasks = tasks.filter(task => task.id !== id);
-
-  if (tasks.length === initialLength) {
-    return NextResponse.json({ message: 'Task not found' }, { status: 404 });
-  }
-
-  return NextResponse.json({ message: 'Task deleted successfully' }, { status: 200 });
 }

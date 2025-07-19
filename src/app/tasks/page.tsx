@@ -8,16 +8,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { toast } from 'sonner'; // Untuk notifikasi toast
+import { toast } from 'sonner';
 
 interface Task {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   dueDate: string;
   status: 'To Do' | 'In Progress' | 'Done';
   priority: 'Low' | 'Medium' | 'High';
-  assignee: string;
+  assignee: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -28,7 +28,7 @@ export default function TasksPage() {
   const [error, setError] = useState<string | null>(null);
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState<boolean>(false);
   const [isUpdateTaskDialogOpen, setIsUpdateTaskDialogOpen] = useState<boolean>(false);
-  const [currentTask, setCurrentTask] = useState<Task | null>(null); // Untuk update/delete
+  const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [formData, setFormData] = useState<Omit<Task, 'id' | 'createdAt' | 'updatedAt'>>({
     title: '',
     description: '',
@@ -48,9 +48,14 @@ export default function TasksPage() {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
       const data: Task[] = await res.json();
-      setTasks(data);
-    } catch (error: unknown) {
-      console.error('Failed to fetch tasks:', error);
+      // Format dueDate dari Date object ke string YYYY-MM-DD untuk input type="date"
+      const formattedData = data.map(task => ({
+        ...task,
+        dueDate: new Date(task.dueDate).toISOString().split('T')[0] // Ambil hanya tanggal
+      }));
+      setTasks(formattedData);
+    } catch (err: unknown) {
+      console.error('Failed to fetch tasks:', err);
       setError('Gagal memuat tugas. Silakan coba lagi.');
       toast.error('Gagal memuat tugas');
     } finally {
@@ -90,7 +95,12 @@ export default function TasksPage() {
       }
 
       const newTask: Task = await res.json();
-      setTasks(prevTasks => [...prevTasks, newTask]);
+      // Format dueDate dari Date object ke string YYYY-MM-DD
+      const formattedNewTask = {
+        ...newTask,
+        dueDate: new Date(newTask.dueDate).toISOString().split('T')[0]
+      };
+      setTasks(prevTasks => [...prevTasks, formattedNewTask]);
       setIsNewTaskDialogOpen(false);
       setFormData({
         title: '', description: '', dueDate: '', status: 'To Do', priority: 'Low', assignee: ''
@@ -98,7 +108,7 @@ export default function TasksPage() {
       toast.success('Tugas baru berhasil ditambahkan!');
     } catch (err: unknown) {
       console.error('Failed to add task:', err);
-      if (err instanceof Error){
+      if (err instanceof Error) {        
         setError(`Gagal menambahkan tugas: ${err.message}`);
         toast.error(`Gagal menambahkan tugas: ${err.message}`);
       }
@@ -108,13 +118,14 @@ export default function TasksPage() {
   // --- Siapkan Form untuk Update ---
   const openUpdateDialog = (task: Task) => {
     setCurrentTask(task);
+
     setFormData({
       title: task.title,
-      description: task.description,
-      dueDate: task.dueDate,
+      description: task.description || '',
+      dueDate: new Date(task.dueDate).toISOString().split('T')[0],
       status: task.status,
       priority: task.priority,
-      assignee: task.assignee,
+      assignee: task.assignee || '',
     });
     setIsUpdateTaskDialogOpen(true);
   };
@@ -139,18 +150,23 @@ export default function TasksPage() {
       }
 
       const updatedTask: Task = await res.json();
+      // Format dueDate dari Date object ke string YYYY-MM-DD
+      const formattedUpdatedTask = {
+        ...updatedTask,
+        dueDate: new Date(updatedTask.dueDate).toISOString().split('T')[0]
+      };
       setTasks(prevTasks =>
-        prevTasks.map(task => (task.id === updatedTask.id ? updatedTask : task))
+        prevTasks.map(task => (task.id === formattedUpdatedTask.id ? formattedUpdatedTask : task))
       );
       setIsUpdateTaskDialogOpen(false);
-      setCurrentTask(null); // Clear current task
+      setCurrentTask(null);
       setFormData({
         title: '', description: '', dueDate: '', status: 'To Do', priority: 'Low', assignee: ''
       }); // Reset form
       toast.success('Tugas berhasil diperbarui!');
     } catch (err: unknown) {
       console.error('Failed to update task:', err);
-      if (err instanceof Error) {
+      if (err instanceof Error) {        
         setError(`Gagal memperbarui tugas: ${err.message}`);
         toast.error(`Gagal memperbarui tugas: ${err.message}`);
       }
@@ -167,7 +183,7 @@ export default function TasksPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id }), // Kirim ID untuk dihapus
+        body: JSON.stringify({ id }),
       });
 
       if (!res.ok) {
@@ -179,7 +195,7 @@ export default function TasksPage() {
       toast.success('Tugas berhasil dihapus!');
     } catch (err: unknown) {
       console.error('Failed to delete task:', err);
-      if (err instanceof Error) {
+      if (err instanceof Error) {        
         setError(`Gagal menghapus tugas: ${err.message}`);
         toast.error(`Gagal menghapus tugas: ${err.message}`);
       }
@@ -191,14 +207,14 @@ export default function TasksPage() {
     switch (status) {
       case 'To Do': return 'bg-muted text-muted-foreground';
       case 'In Progress': return 'bg-primary/20 text-primary-foreground';
-      case 'Done': return 'bg-green-100 text-green-700'; // Contoh warna langsung
+      case 'Done': return 'bg-green-100 text-green-700';
       default: return 'bg-muted text-muted-foreground';
     }
   };
 
   const getPriorityColorClass = (priority: Task['priority']) => {
     switch (priority) {
-      case 'Low': return 'bg-blue-100 text-blue-700'; // Contoh warna langsung
+      case 'Low': return 'bg-blue-100 text-blue-700';
       case 'Medium': return 'bg-yellow-100 text-yellow-700';
       case 'High': return 'bg-destructive/20 text-destructive';
       default: return 'bg-muted text-muted-foreground';
@@ -248,7 +264,7 @@ export default function TasksPage() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="description" className="text-right">Deskripsi</Label>
-                <Textarea id="description" value={formData.description} onChange={handleInputChange} className="col-span-3 bg-input text-foreground border-border" required />
+                <Textarea id="description" value={formData.description || ''} onChange={handleInputChange} className="col-span-3 bg-input text-foreground border-border" />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="dueDate" className="text-right">Batas Waktu</Label>
@@ -282,7 +298,7 @@ export default function TasksPage() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="assignee" className="text-right">Penugas</Label>
-                <Input id="assignee" value={formData.assignee} onChange={handleInputChange} className="col-span-3 bg-input text-foreground border-border" required />
+                <Input id="assignee" value={formData.assignee || ''} onChange={handleInputChange} className="col-span-3 bg-input text-foreground border-border" />
               </div>
               <DialogFooter>
                 <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md">Tambah Tugas</Button>
@@ -301,7 +317,7 @@ export default function TasksPage() {
               <CardHeader>
                 <CardTitle className="text-primary text-2xl mb-2">{task.title}</CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  {task.description.length > 100 ? `${task.description.substring(0, 100)}...` : task.description}
+                  {task.description && task.description.length > 100 ? `${task.description.substring(0, 100)}...` : task.description}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
@@ -349,7 +365,7 @@ export default function TasksPage() {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">Deskripsi</Label>
-              <Textarea id="description" value={formData.description} onChange={handleInputChange} className="col-span-3 bg-input text-foreground border-border" required />
+              <Textarea id="description" value={formData.description || ''} onChange={handleInputChange} className="col-span-3 bg-input text-foreground border-border" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="dueDate" className="text-right">Batas Waktu</Label>
@@ -383,7 +399,7 @@ export default function TasksPage() {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="assignee" className="text-right">Penugas</Label>
-              <Input id="assignee" value={formData.assignee} onChange={handleInputChange} className="col-span-3 bg-input text-foreground border-border" required />
+              <Input id="assignee" value={formData.assignee || ''} onChange={handleInputChange} className="col-span-3 bg-input text-foreground border-border" />
             </div>
             <DialogFooter>
               <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md">Simpan Perubahan</Button>
