@@ -3,16 +3,16 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { useSession } from 'next-auth/react';
 
 export default function Header() {
   const pathname = usePathname();
+  const { data: session } = useSession();
 
-  const navItems = [
+  const publicNavItems = [
     { name: 'Beranda', href: '/' },
     { name: 'Tentang Kami', href: '/about' },
     { name: 'Fitur', href: '/features' },
-    { name: 'Daftar Tugas (DB)', href: '/tasks' },
-    { name: 'Todo List (Redux)', href: '/todo' },
   ];
 
   return (
@@ -23,7 +23,7 @@ export default function Header() {
         </Link>
 
         <nav className="flex items-center space-x-4 md:space-x-6">
-          {navItems.map((item) => (
+          {publicNavItems.map((item) => (
             <Link key={item.name} href={item.href} passHref>
               <Button
                 variant="ghost"
@@ -35,11 +35,20 @@ export default function Header() {
               </Button>
             </Link>
           ))}
-          {/* <Link href="/tasks/1" passHref>
-            <Button variant="outline" className="text-foreground hover:bg-secondary/20">
-              Lihat Tugas 1
-            </Button>
-          </Link> */}
+          {!session?.user && (
+            <>
+              <Link href="/login" passHref>
+                <Button variant="outline" className="text-primary border-primary hover:bg-primary/10">
+                  Login
+                </Button>
+              </Link>
+              {/* <Link href="/register" passHref>
+                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
+                  Daftar
+                </Button>
+              </Link> */}
+            </>
+          )}
         </nav>
       </div>
     </header>

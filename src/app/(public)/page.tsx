@@ -2,15 +2,12 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-// Anda bisa menambahkan ikon-ikon di sini jika menggunakan library ikon seperti react-icons
-// import { CheckCircle, Users, LayoutDashboard, BellRing } from 'lucide-react'; // Contoh dari lucide-react
-
 export default function HomePage() {
   const features = [
     {
       title: "Manajemen Tugas Intuitif",
       description: "Buat, atur, dan lacak tugas dengan antarmuka yang bersih dan mudah digunakan. Prioritaskan pekerjaan Anda dengan cepat.",
-      // icon: <LayoutDashboard className="h-8 w-8 text-primary" /> // Jika ada ikon
+      // icon: <LayoutDashboard className="h-8 w-8 text-primary" />
     },
     {
       title: "Kolaborasi Tim Efisien",
@@ -33,7 +30,6 @@ export default function HomePage() {
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] bg-background text-foreground overflow-hidden">
       {/* --- Hero Section --- */}
       <section className="relative w-full py-20 md:py-32 text-center bg-gradient-to-br from-primary/10 to-secondary/10 flex flex-col items-center justify-center">
-        {/* Latar belakang bentuk abstrak yang lembut */}
         <div className="absolute top-0 left-0 w-full h-full -z-10 opacity-40">
           <div className="absolute w-60 h-60 bg-primary rounded-full blur-3xl top-1/4 left-1/4 animate-float"></div>
           <div className="absolute w-48 h-48 bg-secondary rounded-full blur-3xl bottom-1/3 right-1/4 animate-float-delay"></div>
@@ -47,7 +43,7 @@ export default function HomePage() {
           <p className="text-xl md:text-2xl text-foreground mb-8 animate-fade-in-up animation-delay-200">
             Sederhanakan alur kerja Anda, berkolaborasi dengan mulus, dan capai tujuan Anda dengan mudah.
           </p>
-          <Link href="/signup"> {/* Ganti dengan rute pendaftaran jika sudah ada */}
+          <Link href="/register">
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 animate-fade-in-up animation-delay-400">
               Mulai Gratis Sekarang
             </Button>
@@ -72,7 +68,7 @@ export default function HomePage() {
           {features.map((feature, index) => (
             <Card key={index} className="flex flex-col items-center text-center p-6 bg-background border border-border shadow-md transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
               <CardHeader className="p-0 mb-4">
-                {/* {feature.icon} */} {/* Uncomment jika Anda menambahkan ikon */}
+                {/* {feature.icon} */}
                 <span className="text-5xl text-primary mb-2">✨</span> {/* Placeholder Icon */}
                 <CardTitle className="text-xl font-semibold text-foreground">{feature.title}</CardTitle>
               </CardHeader>
@@ -100,7 +96,7 @@ export default function HomePage() {
           <p className="text-xl md:text-2xl text-foreground mb-8">
             Daftar sekarang dan rasakan kemudahan mengelola pekerjaan dengan KelolaHub.
           </p>
-          <Link href="/signup"> {/* Ganti dengan rute pendaftaran */}
+          <Link href="/register">
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-10 py-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105">
               Mulai Petualangan Produktivitas Anda
             </Button>
