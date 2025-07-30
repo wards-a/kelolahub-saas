@@ -36,7 +36,7 @@ export default function TodoPage() {
       }
       const data: Todo[] = await res.json();
       setTodos(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch todos:', err);
       setError('Gagal memuat todo. Silakan coba lagi.');
       toast.error('Gagal memuat todo');
@@ -70,10 +70,12 @@ export default function TodoPage() {
         setTodos(prev => [addedTodo, ...prev]);
         setNewTodoText('');
         toast.success('Todo berhasil ditambahkan!');
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to add todo:', err);
-        setError(`Gagal menambahkan todo: ${err.message}`);
-        toast.error(`Gagal menambahkan todo: ${err.message}`);
+        if (err instanceof Error) {          
+          setError(`Gagal menambahkan todo: ${err.message}`);
+          toast.error(`Gagal menambahkan todo: ${err.message}`);
+        }
       }
     } else {
       toast.warning('Todo tidak boleh kosong!');
@@ -98,10 +100,12 @@ export default function TodoPage() {
       const updatedTodo: Todo = await res.json();
       setTodos(prev => prev.map(t => (t.id === updatedTodo.id ? updatedTodo : t)));
       toast.success('Status todo berhasil diperbarui!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to toggle todo status:', err);
-      setError(`Gagal memperbarui status: ${err.message}`);
-      toast.error(`Gagal memperbarui status: ${err.message}`);
+      if (err instanceof Error) {        
+        setError(`Gagal memperbarui status: ${err.message}`);
+        toast.error(`Gagal memperbarui status: ${err.message}`);
+      }
     }
   };
 
@@ -125,10 +129,12 @@ export default function TodoPage() {
 
       setTodos(prev => prev.filter(t => t.id !== id));
       toast.success('Todo berhasil dihapus!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to delete todo:', err);
-      setError(`Gagal menghapus todo: ${err.message}`);
-      toast.error(`Gagal menghapus todo: ${err.message}`);
+      if (err instanceof Error) {        
+        setError(`Gagal menghapus todo: ${err.message}`);
+        toast.error(`Gagal menghapus todo: ${err.message}`);
+      }
     }
   };
 
@@ -166,10 +172,12 @@ export default function TodoPage() {
       setEditingTodo(null);
       setEditedText('');
       toast.success('Todo berhasil diperbarui!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to edit todo:', err);
-      setError(`Gagal memperbarui todo: ${err.message}`);
-      toast.error(`Gagal memperbarui todo: ${err.message}`);
+      if (err instanceof Error) {        
+        setError(`Gagal memperbarui todo: ${err.message}`);
+        toast.error(`Gagal memperbarui todo: ${err.message}`);
+      }
     }
   };
 

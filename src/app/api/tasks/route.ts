@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client'; // Import PrismaClient
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient(); // Inisialisasi Prisma Client
+const prisma = new PrismaClient();
 
 // --- Mengambil Semua Data (GET) ---
 export async function GET() {
   try {
     const tasks = await prisma.task.findMany({
-      orderBy: { createdAt: 'desc' }, // Urutkan berdasarkan waktu pembuatan terbaru
+      orderBy: { createdAt: 'desc' },
     });
     return NextResponse.json(tasks);
   } catch (error) {
@@ -21,7 +21,6 @@ export async function POST(request: NextRequest) {
   try {
     const { title, description, dueDate, status, priority, assignee } = await request.json();
 
-    // Validasi dasar
     if (!title || !dueDate || !status || !priority) {
       return NextResponse.json({ message: 'Missing required fields: title, dueDate, status, priority' }, { status: 400 });
     }
