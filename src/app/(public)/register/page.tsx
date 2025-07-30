@@ -36,9 +36,11 @@ export default function RegisterPage() {
 
       toast.success('Pendaftaran berhasil! Silakan login.');
       router.push('/login');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Registration error:', error);
-      toast.error(error.message || 'Terjadi kesalahan saat pendaftaran.');
+      if (error instanceof Error) {        
+        toast.error(error.message || 'Terjadi kesalahan saat pendaftaran.');
+      }
     } finally {
       setLoading(false);
     }

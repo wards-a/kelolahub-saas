@@ -15,7 +15,7 @@ export const authOptions = {
         email: { label: 'Email', type: 'text', placeholder: 'jsmith@example.com' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials, req) {
+      async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email dan password wajib diisi.');
         }
@@ -53,7 +53,7 @@ export const authOptions = {
     error: '/login',
   },
   callbacks: {
-    async jwt({ token, user }: { token: any; user?: any }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.email = user.email;
@@ -61,7 +61,7 @@ export const authOptions = {
       }
       return token;
     },
-    async session({ session, token }: {session: any; token: any}) {
+    async session({ session, token }) {
       if (token.id) {
         session.user.id = token.id as string;
       }

@@ -32,9 +32,11 @@ export default function LoginPage() {
 
       toast.success('Login berhasil! Selamat datang di KelolaHub.');
       router.push('/todo');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
-      toast.error(error.message || 'Email atau password salah.');
+      if (error instanceof Error) {        
+        toast.error(error.message || 'Email atau password salah.');
+      }
     } finally {
       setLoading(false);
     }
