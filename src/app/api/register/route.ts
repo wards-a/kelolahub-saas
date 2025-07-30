@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const { password: _, ...userWithoutPassword } = newUser;
+     const { password: removedPassword, ...userWithoutPassword } = newUser;
 
     return NextResponse.json({ message: 'Pendaftaran berhasil!', user: userWithoutPassword }, { status: 201 });
   } catch (error) {
