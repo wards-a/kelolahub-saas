@@ -30,9 +30,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-     const { password: removedPassword, ...userWithoutPassword } = newUser;
+    // const { password: _, ...userWithoutPassword } = newUser;
 
-    return NextResponse.json({ message: 'Pendaftaran berhasil!', user: userWithoutPassword }, { status: 201 });
+    return NextResponse.json({ message: 'Pendaftaran berhasil!', user: newUser }, { status: 201 });
   } catch (error) {
     console.error('Error during registration:', error);
     return NextResponse.json({ message: 'Terjadi kesalahan server.' }, { status: 500 });
