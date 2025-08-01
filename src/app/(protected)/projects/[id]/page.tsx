@@ -62,8 +62,8 @@ export default function ProjectDashboard({ params }: { params: Promise<{ id: str
   const [editTaskPriority, setEditTaskPriority] = useState('Low');
   const [editTaskStatus, setEditTaskStatus] = useState<Task['status']>('To Do');
 
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false); // State untuk dialog konfirmasi hapus
-  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null); // State untuk tugas yang akan dihapus
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
   const {id} = use(params);
 
@@ -178,7 +178,6 @@ export default function ProjectDashboard({ params }: { params: Promise<{ id: str
     }
   };
 
-  // Fungsi untuk mengelola penghapusan tugas
   const handleDeleteTask = async () => {
     if (!taskToDelete) return;
 
@@ -218,9 +217,7 @@ export default function ProjectDashboard({ params }: { params: Promise<{ id: str
     setIsDeleteDialogOpen(true);
   };
 
-  // Fungsi untuk mengupdate status tugas (drag-and-drop logic)
   const handleUpdateTaskStatus = async (taskId: string, newStatus: Task['status']) => {
-    // Implementasi API call PUT untuk mengupdate status
     try {
         const res = await fetch(`/api/projects/${id}/tasks`, {
             method: 'PUT',
@@ -229,7 +226,6 @@ export default function ProjectDashboard({ params }: { params: Promise<{ id: str
         });
         if (!res.ok) throw new Error('Gagal update status tugas.');
 
-        // Perbarui state lokal
         setTasks(prevTasks =>
             prevTasks.map(task =>
                 task.id === taskId ? { ...task, status: newStatus } : task
@@ -413,7 +409,7 @@ export default function ProjectDashboard({ params }: { params: Promise<{ id: str
             </form>
           </DialogContent>
         </Dialog>
-        
+
         {/* Dialog Konfirmasi Hapus */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <DialogContent>
@@ -480,7 +476,8 @@ const KanbanColumn = ({ title, tasks, onTaskStatusChange, onEditTask, onDeleteTa
           tasks.map(task => (
             <div
               key={task.id}
-              className="p-4 rounded-md bg-card-secondary border border-card-border shadow-sm relative"
+              className="p-4 rounded-md bg-card-secondary border border-card-border shadow-sm relative cursor-pointer group hover:bg-card-hover transition-colors"
+              onClick={() => onEditTask(task)} // Seluruh kartu dapat diklik untuk mengedit
             >
               {/* Tombol Hapus */}
               <Button
@@ -494,10 +491,8 @@ const KanbanColumn = ({ title, tasks, onTaskStatusChange, onEditTask, onDeleteTa
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
-              <div
-                className="cursor-pointer group"
-                onClick={() => onEditTask(task)}
-              >
+              {/* Konten Tugas */}
+              <div>
                 <h3 className="font-medium text-lg">{task.title}</h3>
                 <p className="text-sm text-muted-foreground">{task.description || 'Tidak ada deskripsi.'}</p>
                 {task.assignee && (
