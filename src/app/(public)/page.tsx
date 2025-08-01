@@ -55,7 +55,7 @@ export default function HomePage() {
       </section>
 
       {/* --- Feature Highlights Section --- */}
-      <section className="w-full py-20 px-4 md:px-6 bg-card">
+      <section className="w-full py-20 px-4 md:px-6 bg-card flex flex-col items-center justify-center">
         <div className="container max-w-6xl text-center mb-12">
           <h2 className="text-4xl md:text-5xl font-bold text-primary mb-4">
             Dirancang untuk Produktivitas Anda
@@ -66,7 +66,7 @@ export default function HomePage() {
         </div>
         <div className="container max-w-6xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature, index) => (
-            <Card key={index} className="flex flex-col items-center text-center p-6 bg-background border border-border shadow-md transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+            <Card key={index} className="flex flex-col text-center p-6 bg-background border border-border shadow-md transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
               <CardHeader className="p-0 mb-4">
                 {/* {feature.icon} */}
                 <span className="text-5xl text-primary mb-2">✨</span> {/* Placeholder Icon */}
@@ -88,7 +88,7 @@ export default function HomePage() {
       </section>
 
       {/* --- Call to Action (CTA) Section --- */}
-      <section className="w-full py-20 px-4 md:px-6 bg-gradient-to-tl from-secondary/10 to-primary/10 text-center">
+      <section className="w-full py-20 px-4 md:px-6 bg-gradient-to-tl from-secondary/10 to-primary/10 text-center flex flex-col items-center justify-center">
         <div className="container max-w-4xl">
           <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6">
             Siap Tingkatkan Produktivitas Anda?

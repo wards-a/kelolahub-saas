@@ -58,7 +58,7 @@ export default function RegisterPage() {
         <CardContent>
           <form onSubmit={handleRegister} className="grid gap-4">
             <div>
-              <Label htmlFor="name">Nama</Label>
+              <Label htmlFor="name" className='mb-1.5'>Nama</Label>
               <Input
                 id="name"
                 type="text"
@@ -70,7 +70,7 @@ export default function RegisterPage() {
               />
             </div>
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className='mb-1.5'>Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -82,7 +82,7 @@ export default function RegisterPage() {
               />
             </div>
             <div>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className='mb-1.5'>Password</Label>
               <Input
                 id="password"
                 type="password"

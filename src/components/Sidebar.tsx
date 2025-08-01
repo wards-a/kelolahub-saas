@@ -12,9 +12,10 @@ export default function Sidebar() {
   const { data: session, status } = useSession();
 
   const protectedNavItems = [
+    { name: 'Dashboard', href: '/dashboard' },
     { name: 'Todo List', href: '/todo' },
-    { name: 'Daftar Tugas', href: '/tasks' },
-  ];
+    { name: 'Proyek', href: '/projects' },
+];
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/login' });

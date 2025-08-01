@@ -54,7 +54,7 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleLogin} className="grid gap-4">
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className='mb-1.5'>Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -66,7 +66,7 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className='mb-1.5'>Password</Label>
               <Input
                 id="password"
                 type="password"

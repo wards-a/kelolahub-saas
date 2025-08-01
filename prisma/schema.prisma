@@ -13,18 +13,66 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Project {
+  id           String          @id @default(cuid())
+  name         String
+  description  String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  
+  members      ProjectMember[]
+  tasks        Task[]
+}
+
+model ProjectMember {
+  id           String          @id @default(cuid())
+  role         String          @default("member")
+  
+  // Relasi: Setiap anggota terhubung ke satu User
+  userId       String
+  user         User            @relation(fields: [userId], references: [id])
+  
+  // Relasi: Setiap anggota terhubung ke satu Project
+  projectId    String
+  project      Project         @relation(fields: [projectId], references: [id])
+  
+  @@unique([userId, projectId])
+}
+
 model Task {
   id          String    @id @default(cuid())
   title       String
   description String?
-  dueDate     DateTime  @map("due_date")
+  dueDate     DateTime? @map("due_date")
   status      String    @default("To Do")
   priority    String    @default("Low")
-  assignee    String?
+  
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id])
+  
+  assigneeId  String?   @map("assignee_id")
+  assignee    User?     @relation(name: "AssignedTasks", fields: [assigneeId], references: [id])
+  
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
   @@map("tasks")
+}
+
+model User {
+  id            String          @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  password      String?
+  accounts      Account[]
+  sessions      Session[]
+  
+  projects      ProjectMember[]
+  assignedTasks Task[]          @relation(name: "AssignedTasks")
+
+  @@map("users")
 }
 
 model Todo {
@@ -35,19 +83,6 @@ model Todo {
   updatedAt DateTime @updatedAt
 
   @@map("todos")
-}
-
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime? @map("email_verified")
-  image         String?
-  password      String?   
-  accounts      Account[]
-  sessions      Session[]
-
-  @@map("users")
 }
 
 model Account {
