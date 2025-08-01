@@ -5,7 +5,7 @@ export default function NotFound() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center text-center p-8 bg-background text-foreground">
       <div className="max-w-md w-full bg-card rounded-lg shadow-xl p-10 border border-border">
-        <h1 className="text-8xl font-extrabold text-primary mb-6 animate-bounce-slow">
+        <h1 className="text-8xl font-extrabold text-primary mb-6">
           404
         </h1>
         <h2 className="text-3xl font-semibold text-foreground mb-4">
