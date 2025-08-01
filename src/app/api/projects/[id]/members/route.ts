@@ -55,14 +55,14 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) {
     return NextResponse.json({ message: 'Tidak terautentikasi' }, { status: 401 });
   }
 
-  const { id: projectId } = params;
+  const { id: projectId } = await params;
   const { email } = await request.json();
 
   if (!email) {
