@@ -12,7 +12,7 @@ export default function Sidebar() {
   const { data: session, status } = useSession();
 
   const protectedNavItems = [
-    { name: 'Dashboard', href: '/dashboard' },
+    // { name: 'Dashboard', href: '/dashboard' },
     { name: 'Todo List', href: '/todo' },
     { name: 'Proyek', href: '/projects' },
 ];
