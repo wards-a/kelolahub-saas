@@ -28,11 +28,9 @@ model ProjectMember {
   id           String          @id @default(cuid())
   role         String          @default("member")
   
-  // Relasi: Setiap anggota terhubung ke satu User
   userId       String
   user         User            @relation(fields: [userId], references: [id])
   
-  // Relasi: Setiap anggota terhubung ke satu Project
   projectId    String
   project      Project         @relation(fields: [projectId], references: [id])
   
@@ -71,6 +69,7 @@ model User {
   
   projects      ProjectMember[]
   assignedTasks Task[]          @relation(name: "AssignedTasks")
+  todos         Todo[]          @relation(name: "UserTodos")
 
   @@map("users")
 }
@@ -82,6 +81,8 @@ model Todo {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  userId    String
+  user      User      @relation(name: "UserTodos", fields: [userId], references: [id])
   @@map("todos")
 }
 
