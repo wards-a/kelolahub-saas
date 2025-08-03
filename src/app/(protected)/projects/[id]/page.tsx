@@ -1,7 +1,6 @@
-// app/(protected)/projects/[id]/page.tsx
 'use client';
 
-import { use, useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,9 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Users2 } from 'lucide-react';
 
-// Definisikan tipe data sesuai dengan skema Prisma
 interface Project {
   id: string;
   name: string;
@@ -39,7 +37,13 @@ interface Task {
   priority?: string;
 }
 
-export default function ProjectDashboard({ params }: { params: Promise<{ id: string }> }) {
+interface SessionUser {
+    id: string;
+    name: string;
+    email: string;
+}
+
+export default function ProjectDashboard({ params }: { params: { id: string } }) {
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -65,29 +69,47 @@ export default function ProjectDashboard({ params }: { params: Promise<{ id: str
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
-  const {id} = use(params);
+    const [isMemberDialogOpen, setIsMemberDialogOpen] = useState(false);
+  const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [isAddingMember, setIsAddingMember] = useState(false);
 
-  // Fetch data proyek, tugas, dan anggota
-  const fetchData = async () => {
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+
+  const projectId = params.id;
+
+  const isOwner = currentUserRole === 'owner';
+  const isMember = currentUserRole === 'member' || isOwner;
+
+    const fetchData = async () => {
     setLoading(true);
     try {
-      // Ambil detail proyek
-      const projectRes = await fetch(`/api/projects/${id}`);
+            const projectRes = await fetch(`/api/projects/${projectId}`);
       if (!projectRes.ok) throw new Error('Failed to fetch project details.');
       const projectData: Project = await projectRes.json();
       setProject(projectData);
 
-      // Ambil tugas-tugas proyek
-      const tasksRes = await fetch(`/api/projects/${id}/tasks`);
+            const tasksRes = await fetch(`/api/projects/${projectId}/tasks`);
       if (!tasksRes.ok) throw new Error('Failed to fetch tasks.');
       const tasksData: Task[] = await tasksRes.json();
       setTasks(tasksData);
 
-      // Ambil anggota proyek
-      const membersRes = await fetch(`/api/projects/${id}/members`);
+            const membersRes = await fetch(`/api/projects/${projectId}/members`);
       if (!membersRes.ok) throw new Error('Failed to fetch project members.');
       const membersData: Member[] = await membersRes.json();
       setMembers(membersData);
+
+            const sessionRes = await fetch('/api/auth/session');
+      if (sessionRes.ok) {
+        const sessionData = await sessionRes.json();
+        const sessionUser = sessionData.user as SessionUser;
+        setCurrentUserId(sessionUser.id);
+        
+                const currentUserMember = membersData.find(member => member.user.id === sessionUser.id);
+        if (currentUserMember) {
+          setCurrentUserRole(currentUserMember.role);
+        }
+      }
 
     } catch (err: any) {
       setError(err.message);
@@ -98,16 +120,16 @@ export default function ProjectDashboard({ params }: { params: Promise<{ id: str
   };
 
   useEffect(() => {
-    if (id) {
+    if (projectId) {
       fetchData();
     }
-  }, [id]);
+  }, [projectId]);
 
   const handleCreateTask = async (e: FormEvent) => {
     e.preventDefault();
     setIsCreatingTask(true);
     try {
-      const res = await fetch(`/api/projects/${id}/tasks`, {
+      const res = await fetch(`/api/projects/${projectId}/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -144,7 +166,7 @@ export default function ProjectDashboard({ params }: { params: Promise<{ id: str
 
     setIsUpdatingTask(true);
     try {
-      const res = await fetch(`/api/projects/${id}/tasks`, {
+      const res = await fetch(`/api/projects/${projectId}/tasks`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -182,7 +204,7 @@ export default function ProjectDashboard({ params }: { params: Promise<{ id: str
     if (!taskToDelete) return;
 
     try {
-      const res = await fetch(`/api/projects/${id}/tasks`, {
+      const res = await fetch(`/api/projects/${projectId}/tasks`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ taskId: taskToDelete.id }),
@@ -197,6 +219,52 @@ export default function ProjectDashboard({ params }: { params: Promise<{ id: str
       setIsDeleteDialogOpen(false);
       setTaskToDelete(null);
       toast.success('Tugas berhasil dihapus!');
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+    const handleAddMember = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsAddingMember(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: newMemberEmail }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Gagal menambahkan anggota.');
+      }
+
+      const newMember: Member = await res.json();
+      setMembers(prevMembers => [...prevMembers, newMember]);
+      setNewMemberEmail('');
+      toast.success('Anggota baru berhasil ditambahkan!');
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setIsAddingMember(false);
+    }
+  };
+
+    const handleRemoveMember = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/members`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Gagal menghapus anggota.');
+      }
+
+      setMembers(prevMembers => prevMembers.filter(member => member.user.id !== userId));
+      toast.success('Anggota berhasil dihapus!');
     } catch (err: any) {
       toast.error(err.message);
     }
@@ -219,7 +287,7 @@ export default function ProjectDashboard({ params }: { params: Promise<{ id: str
 
   const handleUpdateTaskStatus = async (taskId: string, newStatus: Task['status']) => {
     try {
-        const res = await fetch(`/api/projects/${id}/tasks`, {
+        const res = await fetch(`/api/projects/${projectId}/tasks`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ taskId: taskId, status: newStatus }),
@@ -250,81 +318,135 @@ export default function ProjectDashboard({ params }: { params: Promise<{ id: str
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-4xl font-extrabold text-primary">{project.name}</h1>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              <Plus className="mr-2 h-4 w-4" /> Tambah Tugas
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] bg-card text-foreground border-border">
-            <DialogHeader>
-              <DialogTitle className="text-primary">Buat Tugas Baru</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleCreateTask} className="grid gap-4 py-4">
-              <div>
-                <Label htmlFor="title">Judul Tugas</Label>
-                <Input
-                  id="title"
-                  value={newTaskTitle}
-                  onChange={(e) => setNewTaskTitle(e.target.value)}
-                  className="bg-input text-foreground border-border mt-1"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">Deskripsi</Label>
-                <Textarea
-                  id="description"
-                  value={newTaskDescription}
-                  onChange={(e) => setNewTaskDescription(e.target.value)}
-                  className="bg-input text-foreground border-border mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="assignee">Ditugaskan Kepada</Label>
-                <Select
-                  onValueChange={(value) => setNewTaskAssigneeId(value)}
-                  value={newTaskAssigneeId}
-                >
-                  <SelectTrigger className="w-full bg-input mt-1">
-                    <SelectValue placeholder="Pilih anggota..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card text-foreground border-border">
-                    <SelectItem value="unassigned">Tidak Ditugaskan</SelectItem>
-                    {members.map(member => (
-                      <SelectItem key={member.user.id} value={member.user.id}>
-                        {member.user.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="priority">Prioritas</Label>
-                <Select
-                  onValueChange={(value) => setNewTaskPriority(value)}
-                  value={newTaskPriority}
-                >
-                  <SelectTrigger className="w-full bg-input mt-1">
-                    <SelectValue placeholder="Pilih prioritas..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card text-foreground border-border">
-                    <SelectItem value="High">High</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="Low">Low</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <DialogFooter>
-                <Button type="submit" disabled={isCreatingTask} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                  {isCreatingTask ? 'Menyimpan...' : 'Simpan Tugas'}
+        <div className="flex gap-2">
+          {isMember && (
+            <Dialog open={isMemberDialogOpen} onOpenChange={setIsMemberDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="text-primary hover:bg-primary/10">
+                  <Users2 className="mr-2 h-4 w-4" /> Kelola Anggota
                 </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px] bg-card text-foreground border-border">
+                <DialogHeader>
+                  <DialogTitle className="text-primary">Anggota Proyek</DialogTitle>
+                </DialogHeader>
+                <div className="py-4">
+                  <h3 className="font-semibold mb-2">Anggota Saat Ini ({members.length})</h3>
+                  <ul className="space-y-2 mb-4">
+                    {members.map(member => (
+                      <li key={member.user.id} className="flex items-center justify-between p-2 rounded-md bg-input text-foreground">
+                        <span>{member.user.name} ({member.user.email})</span>
+                        {isOwner && member.user.id !== currentUserId && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:bg-red-100 hover:text-red-700"
+                            onClick={() => handleRemoveMember(member.user.id)}
+                          >
+                            Hapus
+                          </Button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  {isOwner && (
+                    <>
+                      <h3 className="font-semibold mb-2">Tambahkan Anggota Baru</h3>
+                      <form onSubmit={handleAddMember} className="flex gap-2">
+                        <Input
+                          type="email"
+                          placeholder="Email anggota..."
+                          value={newMemberEmail}
+                          onChange={(e) => setNewMemberEmail(e.target.value)}
+                          className="flex-grow bg-input text-foreground border-border"
+                          required
+                        />
+                        <Button type="submit" disabled={isAddingMember} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                          {isAddingMember ? 'Menambahkan...' : 'Tambah'}
+                        </Button>
+                      </form>
+                    </>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
 
-        {/* Dialog untuk Mengubah Tugas */}
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Plus className="mr-2 h-4 w-4" /> Tambah Tugas
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] bg-card text-foreground border-border">
+              <DialogHeader>
+                <DialogTitle className="text-primary">Buat Tugas Baru</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreateTask} className="grid gap-4 py-4">
+                <div>
+                  <Label htmlFor="title">Judul Tugas</Label>
+                  <Input
+                    id="title"
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    className="bg-input text-foreground border-border mt-1"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="description">Deskripsi</Label>
+                  <Textarea
+                    id="description"
+                    value={newTaskDescription}
+                    onChange={(e) => setNewTaskDescription(e.target.value)}
+                    className="bg-input text-foreground border-border mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="assignee">Ditugaskan Kepada</Label>
+                  <Select
+                    onValueChange={(value) => setNewTaskAssigneeId(value)}
+                    value={newTaskAssigneeId}
+                  >
+                    <SelectTrigger className="w-full bg-input mt-1">
+                      <SelectValue placeholder="Pilih anggota..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card text-foreground border-border">
+                      <SelectItem value="unassigned">Tidak Ditugaskan</SelectItem>
+                      {members.map(member => (
+                        <SelectItem key={member.user.id} value={member.user.id}>
+                          {member.user.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="priority">Prioritas</Label>
+                  <Select
+                    onValueChange={(value) => setNewTaskPriority(value)}
+                    value={newTaskPriority}
+                  >
+                    <SelectTrigger className="w-full bg-input mt-1">
+                      <SelectValue placeholder="Pilih prioritas..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card text-foreground border-border">
+                      <SelectItem value="High">High</SelectItem>
+                      <SelectItem value="Medium">Medium</SelectItem>
+                      <SelectItem value="Low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={isCreatingTask} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                    {isCreatingTask ? 'Menyimpan...' : 'Simpan Tugas'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+                
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-[425px] bg-card text-foreground border-border">
             <DialogHeader>
@@ -409,8 +531,7 @@ export default function ProjectDashboard({ params }: { params: Promise<{ id: str
             </form>
           </DialogContent>
         </Dialog>
-
-        {/* Dialog Konfirmasi Hapus */}
+        
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <DialogContent>
                 <DialogHeader>
@@ -427,24 +548,18 @@ export default function ProjectDashboard({ params }: { params: Promise<{ id: str
         </Dialog>
       </div>
       <p className="text-muted-foreground mb-6">{project.description}</p>
-      
-      {/* Tampilkan Papan Kanban */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Kolom To Do */}
+            
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">        
         <KanbanColumn title="To Do" tasks={todoTasks} onTaskStatusChange={handleUpdateTaskStatus} onEditTask={onEditTask} onDeleteTask={onStartDeleteTask} />
-        
-        {/* Kolom In Progress */}
+                
         <KanbanColumn title="In Progress" tasks={inProgressTasks} onTaskStatusChange={handleUpdateTaskStatus} onEditTask={onEditTask} onDeleteTask={onStartDeleteTask} />
-        
-        {/* Kolom Done */}
+                
         <KanbanColumn title="Done" tasks={doneTasks} onTaskStatusChange={handleUpdateTaskStatus} onEditTask={onEditTask} onDeleteTask={onStartDeleteTask} />
       </div>
     </div>
   );
 }
 
-// --- Komponen KanbanColumn ---
-// Komponen sederhana untuk menampilkan kolom Kanban
 interface KanbanColumnProps {
   title: string;
   tasks: Task[];
@@ -477,21 +592,19 @@ const KanbanColumn = ({ title, tasks, onTaskStatusChange, onEditTask, onDeleteTa
             <div
               key={task.id}
               className="p-4 rounded-md bg-card-secondary border border-card-border shadow-sm relative cursor-pointer group hover:bg-card-hover transition-colors"
-              onClick={() => onEditTask(task)} // Seluruh kartu dapat diklik untuk mengedit
-            >
-              {/* Tombol Hapus */}
+              onClick={() => onEditTask(task)}
+            >              
               <Button
                 variant="ghost"
                 size="sm"
                 className="absolute top-1 right-1 text-red-500 hover:bg-red-100 hover:text-red-700 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={(e) => {
-                  e.stopPropagation(); // Mencegah dialog edit terbuka saat tombol hapus diklik
+                  e.stopPropagation();
                   onDeleteTask(task);
                 }}
               >
                 <Trash2 className="h-4 w-4" />
-              </Button>
-              {/* Konten Tugas */}
+              </Button>              
               <div>
                 <h3 className="font-medium text-lg">{task.title}</h3>
                 <p className="text-sm text-muted-foreground">{task.description || 'Tidak ada deskripsi.'}</p>
