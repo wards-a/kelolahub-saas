@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, FormEvent } from 'react';
+import { use, useState, useEffect, FormEvent } from 'react';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,7 +43,7 @@ interface SessionUser {
     email: string;
 }
 
-export default function ProjectDashboard({ params }: { params: { id: string } }) {
+export default function ProjectDashboard({ params }: { params: Promise<{ id: string }> }) {
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -76,7 +76,7 @@ export default function ProjectDashboard({ params }: { params: { id: string } })
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
-  const projectId = params.id;
+  const {id} = use(params);
 
   const isOwner = currentUserRole === 'owner';
   const isMember = currentUserRole === 'member' || isOwner;
@@ -84,17 +84,17 @@ export default function ProjectDashboard({ params }: { params: { id: string } })
     const fetchData = async () => {
     setLoading(true);
     try {
-            const projectRes = await fetch(`/api/projects/${projectId}`);
+            const projectRes = await fetch(`/api/projects/${id}`);
       if (!projectRes.ok) throw new Error('Failed to fetch project details.');
       const projectData: Project = await projectRes.json();
       setProject(projectData);
 
-            const tasksRes = await fetch(`/api/projects/${projectId}/tasks`);
+            const tasksRes = await fetch(`/api/projects/${id}/tasks`);
       if (!tasksRes.ok) throw new Error('Failed to fetch tasks.');
       const tasksData: Task[] = await tasksRes.json();
       setTasks(tasksData);
 
-            const membersRes = await fetch(`/api/projects/${projectId}/members`);
+            const membersRes = await fetch(`/api/projects/${id}/members`);
       if (!membersRes.ok) throw new Error('Failed to fetch project members.');
       const membersData: Member[] = await membersRes.json();
       setMembers(membersData);
@@ -120,16 +120,16 @@ export default function ProjectDashboard({ params }: { params: { id: string } })
   };
 
   useEffect(() => {
-    if (projectId) {
+    if (id) {
       fetchData();
     }
-  }, [projectId]);
+  }, [id]);
 
   const handleCreateTask = async (e: FormEvent) => {
     e.preventDefault();
     setIsCreatingTask(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}/tasks`, {
+      const res = await fetch(`/api/projects/${id}/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -166,7 +166,7 @@ export default function ProjectDashboard({ params }: { params: { id: string } })
 
     setIsUpdatingTask(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}/tasks`, {
+      const res = await fetch(`/api/projects/${id}/tasks`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -204,7 +204,7 @@ export default function ProjectDashboard({ params }: { params: { id: string } })
     if (!taskToDelete) return;
 
     try {
-      const res = await fetch(`/api/projects/${projectId}/tasks`, {
+      const res = await fetch(`/api/projects/${id}/tasks`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ taskId: taskToDelete.id }),
@@ -228,7 +228,7 @@ export default function ProjectDashboard({ params }: { params: { id: string } })
     e.preventDefault();
     setIsAddingMember(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}/members`, {
+      const res = await fetch(`/api/projects/${id}/members`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: newMemberEmail }),
@@ -252,7 +252,7 @@ export default function ProjectDashboard({ params }: { params: { id: string } })
 
     const handleRemoveMember = async (userId: string) => {
     try {
-      const res = await fetch(`/api/projects/${projectId}/members`, {
+      const res = await fetch(`/api/projects/${id}/members`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -287,7 +287,7 @@ export default function ProjectDashboard({ params }: { params: { id: string } })
 
   const handleUpdateTaskStatus = async (taskId: string, newStatus: Task['status']) => {
     try {
-        const res = await fetch(`/api/projects/${projectId}/tasks`, {
+        const res = await fetch(`/api/projects/${id}/tasks`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ taskId: taskId, status: newStatus }),
